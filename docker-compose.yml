@@ -1,0 +1,47 @@
+version: '2'
+services:
+
+  user_microservice:
+    build: ./user
+    ports:
+      - "9001:8080"
+    networks:
+      - backend
+    depends_on:
+      - consul
+
+  product_microservice:
+    build: ./product
+    ports:
+     - "9002:8080"
+    networks:
+      - backend
+    depends_on:
+      - consul
+
+  consul:
+    image: gliderlabs/consul-server
+    hostname: consul
+    ports:
+      - "8300:8300"
+      - "8400:8400"
+      - "8500:8500"
+      - "53:53"
+    command: -data-dir /tmp/consul -bootstrap -client 0.0.0.0
+    networks:
+      - backend
+
+  registrator:
+    image: gliderlabs/registrator
+    hostname: registrator
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock"
+    command: -internal consul://consul:8500
+    networks:
+      - backend
+    depends_on:
+      - consul
+
+networks:
+  backend:
+    driver: bridge
